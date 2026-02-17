@@ -1,6 +1,5 @@
 from pathlib import Path
 from decouple import config
-import dj_database_url
 import os
 PORT = os.environ.get('PORT', '8000')
 
