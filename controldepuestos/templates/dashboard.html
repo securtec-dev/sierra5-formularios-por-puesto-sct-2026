@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}FORMULARIO DE CONTROL - Sierra 5{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:20px;">
+    <h1 style="color:#EBB608; font-size:1.4rem; font-weight:900; letter-spacing:1px;">CONTROL DE PUESTOS</h1>
+    <p style="color:#666; font-size:0.85rem;">{{ hoy|date:"l, d \d\e F \d\e Y" }}</p>
+</div>
+
+<div class="stats-bar">
+    <div class="stat-box">
+        <div class="stat-num">{{ total }}</div>
+        <div class="stat-lbl">Puestos</div>
+    </div>
+    <div class="stat-box" style="border-color:#28a745;">
+        <div class="stat-num" style="color:#28a745;">{{ hechos }}</div>
+        <div class="stat-lbl">Completados</div>
+    </div>
+    <div class="stat-box" style="border-color:#dc3545;">
+        <div class="stat-num" style="color:#dc3545;">{{ pendientes }}</div>
+        <div class="stat-lbl">Pendientes</div>
+    </div>
+</div>
+
+<div class="card-custom">
+    <div class="card-header-custom">
+        <h5>PUESTOS HOY — {{ hoy|date:"d/m/Y" }}</h5>
+    </div>
+    <div class="card-body-custom">
+        {% for d in data %}
+            {% if d.completado %}
+                <div class="puesto-card done">
+                    <div>
+                        <div class="puesto-nombre">{{ d.puesto.nombre }}</div>
+                        <div class="puesto-slug">/estado-de-equipos/{{ d.puesto.slug }}/</div>
+                    </div>
+                    <span class="badge-green">✓ COMPLETADO</span>
+                </div>
+            {% else %}
+                <a href="{% url 'formulario' d.puesto.slug %}" class="puesto-card pending">
+                    <div>
+                        <div class="puesto-nombre">{{ d.puesto.nombre }}</div>
+                        <div class="puesto-slug">/estado-de-equipos/{{ d.puesto.slug }}/</div>
+                    </div>
+                    <span class="badge-pending">PENDIENTE →</span>
+                </a>
+            {% endif %}
+        {% empty %}
+            <p style="color:#666; text-align:center; padding:20px;">
+                No hay puestos activos. Agrégalos desde el <a href="/admin/controldepuestos/puesto/add/" style="color:#EBB608;">admin</a>.
+            </p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

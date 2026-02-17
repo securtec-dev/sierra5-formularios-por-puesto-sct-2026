@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}{{ puesto.nombre }} - Sierra 5{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:16px;">
+    <a href="{% url 'dashboard' %}" style="color:#EBB608; font-size:0.8rem;">← Dashboard</a>
+    <h1 style="color:#EBB608; font-size:1.3rem; font-weight:900; letter-spacing:1px; margin-top:8px;">{{ puesto.nombre|upper }}</h1>
+    <p style="color:#666; font-size:0.8rem;">{{ hoy|date:"d/m/Y" }} — Complete todos los campos y valide antes de guardar.</p>
+</div>
+
+{% if errores %}
+<div class="msg-error">
+    <strong>Corrija los siguientes errores:</strong>
+    <ul style="margin:8px 0 0 16px; font-size:0.85rem;">
+        {% for e in errores %}<li>{{ e }}</li>{% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<form id="mainForm" method="post" novalidate>
+{% csrf_token %}
+
+<div class="card-custom" style="margin-bottom:16px;">
+    <div class="card-header-custom"><h5>🪪 IDENTIFICACIÓN DEL OFICIAL</h5></div>
+    <div class="card-body-custom">
+        <label style="color:#ccc; font-size:0.85rem; display:block; margin-bottom:6px;">Código del Oficial *</label>
+        <input type="text" name="codigo_oficial" class="form-control-custom"
+               placeholder="Ej: OF-0042" value="{{ post_data.codigo_oficial|default:'' }}"
+               style="max-width:300px;" required>
+    </div>
+</div>
+
+<div class="card-custom" style="margin-bottom:16px;">
+    <div class="card-header-custom"><h5>🏠 ESTADO DEL PUESTO — EQUIPOS E INSTALACIONES</h5></div>
+    <div class="card-body-custom">
+        {% for item in items_puesto %}
+        <div class="item-row">
+            <div class="item-nombre">{{ forloop.counter }}. {{ item.nombre }}</div>
+            <div class="radio-group" style="margin-bottom:8px;">
+                <label class="radio-option bueno">
+                    <input type="radio" name="estado_{{ item.id }}" value="B">
+                    <span>✓ Bueno</span>
+                </label>
+                <label class="radio-option malo">
+                    <input type="radio" name="estado_{{ item.id }}" value="M">
+                    <span>✗ Malo</span>
+                </label>
+                <label class="radio-option nohay">
+                    <input type="radio" name="estado_{{ item.id }}" value="N">
+                    <span>No hay</span>
+                </label>
+            </div>
+            <textarea name="justificacion_{{ item.id }}" class="form-control-custom"
+                      rows="2" placeholder="Observaciones o justificación...">{{ post_data|default_if_none:"" }}</textarea>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="card-custom" style="margin-bottom:16px;">
+    <div class="card-header-custom"><h5>👮 ESTADO DEL OFICIAL — UNIFORME Y PRESENTACIÓN</h5></div>
+    <div class="card-body-custom">
+        {% for item in items_oficial %}
+        <div class="item-row">
+            <div class="item-nombre">{{ forloop.counter }}. {{ item.nombre }}</div>
+            <div class="radio-group" style="margin-bottom:8px;">
+                <label class="radio-option bueno">
+                    <input type="radio" name="estado_{{ item.id }}" value="B">
+                    <span>✓ Cumple</span>
+                </label>
+                <label class="radio-option malo">
+                    <input type="radio" name="estado_{{ item.id }}" value="M">
+                    <span>✗ No cumple</span>
+                </label>
+                <label class="radio-option nohay">
+                    <input type="radio" name="estado_{{ item.id }}" value="N">
+                    <span>No aplica</span>
+                </label>
+            </div>
+            <textarea name="justificacion_{{ item.id }}" class="form-control-custom"
+                      rows="2" placeholder="Observaciones o justificación..."></textarea>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div style="text-align:center; margin: 24px 0;">
+    <button type="button" onclick="validarFormulario()" class="btn-primary-custom" style="font-size:1rem; padding:14px 40px;">
+        REVISAR Y GUARDAR
+    </button>
+</div>
+
+</form>
+
+<div class="confirm-modal" id="confirmModal">
+    <div class="confirm-box">
+        <div class="confirm-title">📋 RESUMEN ANTES DE GUARDAR</div>
+        <div class="confirm-list" id="confirmList"></div>
+        <div class="confirm-actions">
+            <button class="btn-primary-custom" onclick="submitFinal()">CONFIRMAR Y GUARDAR</button>
+            <button class="btn-secondary-custom" onclick="cerrarModal()">CORREGIR</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function validarFormulario() {
+    const form = document.getElementById('mainForm');
+    const codigo = form.querySelector('[name="codigo_oficial"]').value.trim();
+    if (!codigo) { alert('Ingrese el código del oficial.'); return; }
+
+    const items = [];
+    let errores = [];
+
+    // Recolectar estados de los radio buttons
+    const radios = form.querySelectorAll('input[type="radio"]');
+    const grupos = {};
+    radios.forEach(r => {
+        if (!grupos[r.name]) grupos[r.name] = null;
+        if (r.checked) grupos[r.name] = r.value;
+    });
+
+    // Recolectar justificaciones
+    const textareas = {};
+    form.querySelectorAll('textarea').forEach(t => { 
+        textareas[t.name] = t.value.trim(); 
+    });
+
+    // Validar fila por fila
+    const itemRows = form.querySelectorAll('.item-row');
+    itemRows.forEach(row => {
+        const nombreElement = row.querySelector('.item-nombre');
+        // Limpiamos el número inicial (ej: "1. Nombre" -> "Nombre")
+        const nombre = nombreElement.textContent.replace(/^\d+\.\s*/, '');
+        
+        const radioInput = row.querySelector('input[type="radio"]');
+        if (!radioInput) return; // Seguridad por si acaso
+
+        const radioName = radioInput.name;
+        const taElement = row.querySelector('textarea');
+        const taName = taElement ? taElement.name : '';
+
+        const estado = grupos[radioName];
+        const jus = textareas[taName] || '';
+
+        // Reglas de validación: 
+        // 1. Debe tener estado seleccionado.
+        // 2. Si es Malo (M) o No Hay/Aplica (N), la justificación es obligatoria.
+        if (!estado) {
+            errores.push(`Falta seleccionar estado en: ${nombre}`);
+        } else if ((estado === 'M' || estado === 'N') && jus === '') {
+            errores.push(`Falta justificación en: ${nombre} (${estado === 'M' ? 'Malo' : 'No aplica'})`);
+        }
+
+        if (estado) items.push({ nombre, estado, jus });
+    });
+
+    if (errores.length > 0) {
+        alert('Por favor complete los siguientes campos:\n\n' + errores.slice(0, 5).join('\n') + (errores.length > 5 ? `\n...y ${errores.length-5} más` : ''));
+        return;
+    }
+
+    // Generar resumen para el Modal
+    const malos = items.filter(i => i.estado === 'M');
+    const nohay = items.filter(i => i.estado === 'N');
+    const buenos = items.filter(i => i.estado === 'B');
+
+    let html = `<strong style="color:#28a745;">✓ Buenos / Cumple: ${buenos.length}</strong><br>`;
+    
+    if (nohay.length) {
+        html += `<br><strong style="color:#ffc107;">⚠ No hay / No aplica (${nohay.length}):</strong><br>`;
+        nohay.forEach(i => html += `• ${i.nombre}: <em style="color:#888;">${i.jus}</em><br>`);
+    }
+    
+    if (malos.length) {
+        html += `<br><strong style="color:#dc3545;">✗ Malo / No cumple (${malos.length}):</strong><br>`;
+        malos.forEach(i => html += `• ${i.nombre}: <em style="color:#ccc;">${i.jus}</em><br>`);
+    }
+
+    document.getElementById('confirmList').innerHTML = html;
+    document.getElementById('confirmModal').classList.add('show');
+}
+
+function submitFinal() {
+    document.getElementById('mainForm').submit();
+}
+
+function cerrarModal() {
+    document.getElementById('confirmModal').classList.remove('show');
+}
+</script>
+{% endblock %}

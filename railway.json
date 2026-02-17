@@ -1,0 +1,8 @@
+{
+  "build": {
+    "builder": "DOCKERFILE"
+  },
+  "deploy": {
+    "startCommand": "python manage.py migrate && gunicorn sierra5.wsgi:application --bind 0.0.0.0:$PORT --workers 2"
+  }
+}

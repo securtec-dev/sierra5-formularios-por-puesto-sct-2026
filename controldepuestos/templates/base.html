@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Yeison Araya - Sierra 5{% endblock %}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}">
+    
+    <style>
+        /* Estilos específicos para componentes de la interfaz */
+        .badge-green { background: #28a745; color: #fff; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+        .badge-pending { background: #333; color: #ccc; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+        .badge-malo { background: #dc3545; color: #fff; padding: 3px 8px; border-radius: 4px; font-size: 0.7rem; }
+        .badge-nohay { background: #ffc107; color: #000; padding: 3px 8px; border-radius: 4px; font-size: 0.7rem; }
+
+        .msg-success { background: rgba(40,167,69,0.15); border: 1px solid #28a745; color: #28a745; padding: 12px 16px; border-radius: 6px; margin-bottom: 16px; }
+        .msg-warning { background: rgba(255,193,7,0.15); border: 1px solid #ffc107; color: #ffc107; padding: 12px 16px; border-radius: 6px; margin-bottom: 16px; }
+        .msg-error   { background: rgba(220,53,69,0.15); border: 1px solid #dc3545; color: #dc3545; padding: 12px 16px; border-radius: 6px; margin-bottom: 16px; }
+
+        .form-control-custom {
+            background: #1A1A1A;
+            border: 1px solid #333;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            width: 100%;
+            font-size: 0.875rem;
+        }
+        .form-control-custom:focus { outline: none; border-color: #EBB608; }
+        .form-control-custom::placeholder { color: #666; }
+
+        .radio-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        .radio-option { cursor: pointer; }
+        .radio-option input { display: none; }
+        .radio-option span {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 2px solid #333;
+            font-size: 0.8rem;
+            font-weight: 700;
+            transition: all 0.2s;
+            user-select: none;
+        }
+        .radio-option input:checked + span { border-color: #EBB608; }
+        .radio-option.bueno input:checked + span { background: #28a745; border-color: #28a745; color: #fff; }
+        .radio-option.malo input:checked + span { background: #dc3545; border-color: #dc3545; color: #fff; }
+        .radio-option.nohay input:checked + span { background: #ffc107; border-color: #ffc107; color: #000; }
+
+        .item-row {
+            background: #1A1A1A;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            transition: border-color 0.2s;
+        }
+        .item-row:focus-within { border-color: #EBB608; }
+        .item-nombre { font-weight: 700; color: #fff; margin-bottom: 10px; font-size: 0.9rem; }
+
+        .section-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #EBB608;
+            margin: 20px 0 10px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #333;
+        }
+
+        .puesto-card {
+            background: #1A1A1A;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            text-decoration: none;
+            color: #fff;
+            transition: all 0.2s;
+        }
+        .puesto-card:hover { border-color: #EBB608; color: #fff; background: #222; }
+        .puesto-card.done { border-left: 4px solid #28a745; }
+        .puesto-card.pending { border-left: 4px solid #444; }
+        .puesto-nombre { font-weight: 700; font-size: 1rem; }
+        .puesto-slug { font-size: 0.75rem; color: #666; }
+
+        .stats-bar {
+            display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap;
+        }
+        .stat-box {
+            background: #1A1A1A;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 12px 20px;
+            text-align: center;
+            min-width: 100px;
+        }
+        .stat-num { font-size: 1.8rem; font-weight: 900; color: #EBB608; }
+        .stat-lbl { font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+
+        .confirm-modal {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.85); z-index: 2000;
+            align-items: center; justify-content: center;
+        }
+        .confirm-modal.show { display: flex; }
+        .confirm-box {
+            background: #1A1A1A;
+            border: 2px solid #EBB608;
+            border-radius: 10px;
+            padding: 28px;
+            max-width: 480px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .confirm-title { color: #EBB608; font-weight: 900; font-size: 1.1rem; margin-bottom: 14px; }
+        .confirm-list { font-size: 0.85rem; color: #ccc; margin-bottom: 20px; line-height: 1.8; }
+        .confirm-actions { display: flex; gap: 12px; }
+    </style>
+</head>
+<body>
+
+<header class="admin-header">
+    <div class="brand" style="margin-right: auto;">
+        Yeison Araya - Sierra 5
+    </div>
+</header>
+
+<main class="admin-main" style="margin-left:0; padding: 24px 20px;">
+    <div class="content">
+        {% if messages %}
+            {% for m in messages %}
+                <div class="msg-{% if m.tags == 'success' %}success{% elif m.tags == 'warning' %}warning{% else %}error{% endif %}">
+                    {{ m }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </div>
+</main>
+
+</body>
+</html>
